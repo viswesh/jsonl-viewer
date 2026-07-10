@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JSONL Viewer — view .jsonl files instantly, locally</title>
+  <meta name="description" content="Drop a .jsonl file and view it instantly. Streams gigabyte files in your browser. Nothing uploads." />
+  <link rel="stylesheet" href="/src/styles/tokens.css" />
+  <link rel="stylesheet" href="/src/styles/app.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="landing" class="landing">
+      <div class="ghost-stream" aria-hidden="true"></div>
+      <h1 class="landing-title">Drop your <span class="accent">.jsonl</span> — it never leaves your browser.</h1>
+      <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Drop a JSONL file or click to browse">
+        <p>Drop file · click to browse · or paste raw JSONL</p>
+      </div>
+      <button id="demo-link" class="demo-link">try a demo file</button>
+    </section>
+    <section id="viewer" class="viewer" hidden>
+      <header id="topbar" class="topbar"></header>
+      <div class="panes">
+        <div id="list-pane" class="list-pane"></div>
+        <div id="divider" class="divider" role="separator" aria-orientation="vertical"></div>
+        <div id="detail-pane" class="detail-pane"></div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
