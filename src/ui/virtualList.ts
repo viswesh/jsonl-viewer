@@ -43,7 +43,14 @@ export class VirtualList {
     this.renderWindow();
   }
 
-  refresh(): void { this.renderWindow(); }
+  // Force a redraw of currently-mounted rows too (not just newly entering ones) —
+  // callers use refresh() after async data (previews, bad-line flags) arrives for
+  // rows that are already on screen, so render() must run again for them.
+  refresh(): void {
+    for (const el of this.rows.values()) el.remove();
+    this.rows.clear();
+    this.renderWindow();
+  }
 
   scrollToIndex(i: number): void {
     const { container, rowHeight } = this.opts;
