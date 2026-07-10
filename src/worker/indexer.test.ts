@@ -54,6 +54,20 @@ describe('indexBlob', () => {
     expect(s.length).toBeLessThanOrEqual(100);
   });
 
+  it('trailing blank lines do not leak into last line', async () => {
+    const b = blob('{"a":1}\n{"b":2}\n\n\n');
+    const r = await indexBlob(b);
+    expect(r.lineCount).toBe(2);
+    expect(await readLine(b, r.offsets, 1)).toBe('{"b":2}');
+  });
+
+  it('single line with trailing blank lines', async () => {
+    const b = blob('{"a":1}\n\n\n');
+    const r = await indexBlob(b);
+    expect(r.lineCount).toBe(1);
+    expect(await readLine(b, r.offsets, 0)).toBe('{"a":1}');
+  });
+
   it('reports progress', async () => {
     let calls = 0;
     await indexBlob(blob('{"a":1}\n'.repeat(1000)), () => { calls++; });

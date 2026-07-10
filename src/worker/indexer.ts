@@ -54,7 +54,6 @@ export async function readLine(
   const buf = new Uint8Array(await blob.slice(start, end).arrayBuffer());
   let s = decoder.decode(buf);
   if (i === 0 && s.charCodeAt(0) === 0xfeff) s = s.slice(1);
-  if (s.endsWith('\n')) s = s.slice(0, -1);
-  if (s.endsWith('\r')) s = s.slice(0, -1);
+  while (s.length && (s.endsWith('\n') || s.endsWith('\r'))) s = s.slice(0, -1);
   return s;
 }
