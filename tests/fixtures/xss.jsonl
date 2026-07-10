@@ -1,3 +1,4 @@
 {"role":"user","content":"<script>window.__pwned=1</script> hello"}
 {"role":"assistant","content":"<img src=x onerror=\"window.__pwned=2\"> **bold** [link](javascript:alert(3))"}
 {"key":"<script>window.__pwned=4</script>","value":"plain <b>html</b>"}
+{"role":"user","content":"```html\n<img src=x onerror=\"window.__pwned=9\">\n```"}

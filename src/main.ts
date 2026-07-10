@@ -61,15 +61,32 @@ function fillPreview(el: HTMLElement, raw: string): void {
 
 async function loadPreviews(from: number, to: number): Promise<void> {
   if (!state.client || to < from) return;
-  const lines = Array.from({ length: to - from + 1 }, (_, i) => displayToLine(from + i));
-  const missing = lines.some((l) => !state.previews.has(l));
-  if (!missing) return;
-  // contiguous fetch across the mapped range (filtered views fetch a superset — fine, cheap)
-  const lo = Math.min(...lines), hi = Math.max(...lines);
-  const previews = await state.client.getLines(lo, hi);
-  previews.forEach((p, i) => state.previews.set(lo + i, p));
+  const lines: number[] = [];
+  for (let r = from; r <= to; r++) lines.push(displayToLine(r));
+  const missing = lines.filter((l) => !state.previews.has(l));
+  if (!missing.length) return;
+  // fetch exactly the mapped indices — a filtered view's window can span
+  // millions of real lines, so a contiguous fetch would be catastrophic
+  const previews = await state.client.getLinesByIndices(missing);
+  if (previews.length === missing.length) { // guard against stale [] resolution
+    missing.forEach((l, i) => state.previews.set(l, previews[i]!));
+  }
   if (state.previews.size > 5000) state.previews.clear(); // crude LRU: full reset
   list.refresh();
+}
+
+// Called after a filter change (search apply/clear, errors filter) replaces the
+// display list — never from onSearchHits, so a mid-stream batch can't yank the
+// user's selection around. Mirrors initial-load behavior: select row 0 if the
+// new list has rows, otherwise clear the selection and detail pane.
+function resetSelectionForFilterChange(): void {
+  if (displayTotal() > 0) {
+    select(0);
+  } else {
+    state.selected = null;
+    list.setSelected(null);
+    detailPane.textContent = '';
+  }
 }
 
 function select(row: number): void {
@@ -113,12 +130,15 @@ const topbarUpdate = createTopbar($('topbar'), {
     if (!q.trim()) {
       state.searchId = 0; // invalidate any in-flight search — drop its late hits
       state.filtered = null; state.matchCount = null; state.searching = false;
-      list.setTotal(displayTotal()); updateTopbar(); return;
+      list.setTotal(displayTotal()); updateTopbar();
+      resetSelectionForFilterChange();
+      return;
     }
     state.filtered = []; state.matchCount = 0; state.searching = true;
     state.searchId = state.client.search(q);
     list.setTotal(0); // reset filtered view + scroll to top once, at search start
     updateTopbar();
+    resetSelectionForFilterChange();
   },
   onModeToggle() {
     state.mode = state.mode === 'json' ? 'transcript' : 'json';
@@ -135,10 +155,12 @@ const topbarUpdate = createTopbar($('topbar'), {
     state.filtered = [...state.badLines].sort((a, b) => a - b);
     state.matchCount = state.filtered.length; state.searching = false;
     list.setTotal(displayTotal()); updateTopbar();
+    resetSelectionForFilterChange();
   },
 });
 
 function loadBlob(blob: Blob, name: string): void {
+  state.client?.terminate(); // stop the previous file's worker before it can post stale state
   const client = new WorkerClient();
   state.client = client;
   state.filename = name;
