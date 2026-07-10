@@ -30,7 +30,7 @@ function lookup(obj: unknown, path: string[]): { found: boolean; value: unknown 
     let cur = o;
     for (const k of p) {
       if (cur === null || typeof cur !== 'object') return { found: false, value: undefined };
-      if (!(k in (cur as Record<string, unknown>))) return { found: false, value: undefined };
+      if (!Object.prototype.hasOwnProperty.call(cur, k)) return { found: false, value: undefined };
       cur = (cur as Record<string, unknown>)[k];
     }
     return { found: true, value: cur };
@@ -45,8 +45,10 @@ function lookup(obj: unknown, path: string[]): { found: boolean; value: unknown 
     const cur = stack.pop();
     if (cur === null || typeof cur !== 'object') continue;
     const rec = cur as Record<string, unknown>;
-    if (key in rec) return { found: true, value: rec[key] };
-    for (const v of Array.isArray(cur) ? cur : Object.values(rec)) stack.push(v);
+    if (Object.prototype.hasOwnProperty.call(rec, key)) return { found: true, value: rec[key] };
+    // Push children in reverse so the first (document-order) child is popped first.
+    const children = Array.isArray(cur) ? cur : Object.values(rec);
+    for (let j = children.length - 1; j >= 0; j--) stack.push(children[j]);
   }
   return { found: false, value: undefined };
 }
