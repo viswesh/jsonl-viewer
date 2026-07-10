@@ -51,4 +51,12 @@ describe('matchesLine', () => {
   it('numeric compare on non-numeric value is false', () => {
     expect(m('{"tokens":"lots"}', 'tokens>500')).toBe(false);
   });
+  it('bare key first match wins in document order', () => {
+    expect(m('{"x":{"tokens":1},"y":{"tokens":9}}', 'tokens<5')).toBe(true);   // finds x=1, not y=9
+    expect(m('{"x":{"tokens":9},"y":{"tokens":1}}', 'tokens<5')).toBe(false);  // finds x=9 first
+  });
+  it('inherited prototype keys do not count as existing fields', () => {
+    expect(m('{"a":1}', 'constructor:*')).toBe(false);
+    expect(m('{"a":1}', 'toString:*')).toBe(false);
+  });
 });
