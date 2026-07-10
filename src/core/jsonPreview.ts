@@ -16,8 +16,17 @@ export function previewTokens(raw: string, maxLen = 160): PreviewToken[] {
       const c = src[i]!;
       if (c === '"') {
         // scan string, honoring escapes; may be unterminated (truncated line)
+        // a closing quote is real only when preceded by an EVEN run of backslashes
+        // (an odd run means the trailing backslash escapes the quote)
         let j = i + 1;
-        while (j < src.length && (src[j] !== '"' || src[j - 1] === '\\')) j++;
+        while (j < src.length) {
+          if (src[j] === '"') {
+            let bs = 0;
+            while (j - 1 - bs >= i + 1 && src[j - 1 - bs] === '\\') bs++;
+            if (bs % 2 === 0) break; // even backslashes → real closing quote
+          }
+          j++;
+        }
         const text = src.slice(i, Math.min(j + 1, src.length));
         // key iff next non-space char is ':'
         let k = j + 1;
