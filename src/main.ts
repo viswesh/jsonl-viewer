@@ -171,6 +171,18 @@ function loadBlob(blob: Blob, name: string): void {
 
 initDropzone($('dropzone'), $('demo-link'), loadBlob);
 
+// draggable divider
+const divider = $('divider');
+divider.addEventListener('pointerdown', (e) => {
+  divider.setPointerCapture(e.pointerId);
+  const move = (ev: PointerEvent) => {
+    const pct = (ev.clientX / window.innerWidth) * 100;
+    listPane.style.width = `${Math.min(75, Math.max(20, pct))}%`;
+  };
+  divider.addEventListener('pointermove', move);
+  divider.addEventListener('pointerup', () => divider.removeEventListener('pointermove', move), { once: true });
+});
+
 // keyboard: ↑/↓ moves selection
 document.addEventListener('keydown', (e) => {
   if (state.selected === null || (e.target as HTMLElement).tagName === 'INPUT') return;
