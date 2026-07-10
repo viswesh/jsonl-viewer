@@ -1,0 +1,4 @@
+{"role":"user","content":"plain string content"}
+{"role":"assistant","content":[{"type":"text","text":"block content"}]}
+{"speaker":"agent","text":"heuristic shape"}
+{"level":"info","msg":"not a transcript"}
