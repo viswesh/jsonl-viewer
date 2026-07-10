@@ -9,11 +9,25 @@ function mdToSafeHtml(text: string): string {
   return DOMPurify.sanitize(html, { FORBID_TAGS: ['style'], FORBID_ATTR: ['style'] });
 }
 
+// Highlights fenced code blocks already present in the sanitized DOM (post-DOMPurify).
+// Operates only on existing elements via speed-highlight's highlightElement API — never
+// re-introduces innerHTML from an untrusted string.
+async function highlightCodeBlocks(root: HTMLElement): Promise<void> {
+  const blocks = root.querySelectorAll('pre code[class*="language-"]');
+  if (!blocks.length) return;
+  const { highlightElement } = await import('@speed-highlight/core');
+  const detect = (el: Element) => (el.className.match(/language-(\w+)/)?.[1] ?? 'plain');
+  for (const el of blocks) {
+    try { await highlightElement(el as HTMLElement, detect(el) as Parameters<typeof highlightElement>[1]); } catch { /* unknown lang: leave plain */ }
+  }
+}
+
 function renderPart(part: ContentPart): HTMLElement {
   if (part.type === 'text') {
     const div = document.createElement('div');
     div.className = 'part-text';
     div.innerHTML = mdToSafeHtml(part.text);
+    void highlightCodeBlocks(div);
     return div;
   }
   const details = document.createElement('details');
