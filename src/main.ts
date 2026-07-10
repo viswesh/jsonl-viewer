@@ -1,3 +1,4 @@
+import '@speed-highlight/core/themes/github-dark.css';
 import { WorkerClient } from './ui/workerClient';
 import { VirtualList } from './ui/virtualList';
 import { initDropzone } from './ui/dropzone';
@@ -149,6 +150,7 @@ function loadBlob(blob: Blob, name: string): void {
     state.lineCount = lineCount; state.fileSize = fileSize;
     $('landing').hidden = true;
     $('viewer').hidden = false;
+    document.getElementById('seo-footer')?.setAttribute('hidden', '');
     list.setTotal(lineCount);
     updateTopbar();
     client.validate(); // background bad-line sweep

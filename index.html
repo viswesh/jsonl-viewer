@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>JSONL Viewer — view .jsonl files instantly, locally</title>
   <meta name="description" content="Drop a .jsonl file and view it instantly. Streams gigabyte files in your browser. Nothing uploads." />
+  <meta property="og:title" content="JSONL Viewer — view .jsonl files instantly, locally" />
+  <meta property="og:description" content="Drop a .jsonl file and view it instantly. Streams gigabyte files. Auto-renders LLM transcripts. Nothing uploads." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0e1014" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/src/styles/tokens.css" />
   <link rel="stylesheet" href="/src/styles/app.css" />
 </head>
@@ -26,6 +31,14 @@
         <div id="detail-pane" class="detail-pane"></div>
       </div>
     </section>
+    <footer class="seo-footer" id="seo-footer">
+      <h2>What is a JSONL file?</h2>
+      <p>JSONL (JSON Lines, also called NDJSON) is a format where each line is a separate JSON value. It is the standard format for logs, dataset exports, LLM fine-tuning files, and AI agent transcripts.</p>
+      <h2>How this viewer works</h2>
+      <p>Files are parsed entirely in your browser using a streaming Web Worker — line offsets are indexed first, content parses lazily as you scroll. Gigabyte files open in seconds. Nothing is uploaded; there is no server. Verify it yourself: this site's Content-Security-Policy forbids network connections.</p>
+      <h2>LLM transcript mode</h2>
+      <p>Lines shaped like OpenAI fine-tune messages, Anthropic messages, or Claude Code sessions render as readable chat transcripts with markdown, collapsed tool calls, and token counts.</p>
+    </footer>
   </main>
   <script type="module" src="/src/main.ts"></script>
 </body>
