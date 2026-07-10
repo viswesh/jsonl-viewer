@@ -65,32 +65,43 @@ test('xss content does not execute', async ({ page }) => {
 // streaming search is still in flight must not throw, and must restore the
 // full unfiltered list (state.searchId invalidation in main.ts onSearch).
 test('clearing search mid-stream on a large file does not error and restores the full list', async ({ page }) => {
-  const pageErrors: Error[] = [];
-  page.on('pageerror', (err) => pageErrors.push(err));
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
 
   await page.goto('/');
-  const big = Array.from(
-    { length: 20000 },
-    (_, i) => `{"n":${i},"role":"assistant","content":"msg ${i}"}`,
+  // Only 1-in-5 lines carry the marker, so "FLAGME" matches a strict SUBSET
+  // (4000 of 20000). This makes filtered state distinguishable from the full
+  // list AND still streams in multiple worker batches (BATCH=500).
+  const big = Array.from({ length: 20000 }, (_, i) =>
+    JSON.stringify({ n: i, role: 'assistant', content: i % 5 === 0 ? 'FLAGME item' : 'plain item' }),
   ).join('\n');
   await pasteText(page, big);
   await expect(page.locator('#viewer')).toBeVisible();
   await expect(page.locator('#tb-lines')).toContainText('20,000');
 
-  // Matches almost every line — guarantees a multi-batch streaming search
-  // (worker posts in batches of 500 / every 5000 scanned lines).
-  await page.fill('#tb-search', 'assistant');
-  await expect(page.locator('#tb-matches')).toBeVisible();
+  const matches = page.locator('#tb-matches');
 
-  // Clear while the worker may still be mid-scan — the app must invalidate
-  // the in-flight search id rather than let its late hits land.
+  await page.fill('#tb-search', 'FLAGME');
+  // Catch the in-flight window: the topbar renders `${n} matches…` (trailing
+  // ellipsis) only while state.searching is true. This is what makes the test
+  // actually exercise the mid-stream stale-hit path from the Task 10 regression.
+  await expect(matches).toContainText('…');
+
+  // Clear while the worker is still scanning — the app must invalidate the
+  // in-flight search id so its late hits are dropped, not pushed onto a
+  // now-null filtered array (the original TypeError crash).
   await page.fill('#tb-search', '');
 
   // Let any in-flight worker messages arrive and be (correctly) dropped.
   await page.waitForTimeout(400);
 
-  await expect(page.locator('#tb-lines')).toContainText('20,000');
-  expect(pageErrors).toEqual([]);
+  // Discriminating check: #tb-matches is hidden ONLY when matchCount === null,
+  // i.e. state.filtered === null (unfiltered). #tb-lines can't prove this — it
+  // renders state.lineCount unconditionally, unaffected by search state.
+  await expect(matches).toBeHidden();
+  expect(errors).toEqual([]);
+  // Full list is restored from the top.
+  await expect(page.locator('.row').first().locator('.line-num')).toHaveText('1');
 });
 
 // Task 11, "ERRORS-FILTER-CORRECT-LINE": clicking the errors readout must
