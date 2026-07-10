@@ -40,6 +40,15 @@ export class VirtualList {
     this.total = n;
     this.spacer.style.height = `${n * this.opts.rowHeight}px`;
     this.opts.container.scrollTop = 0;
+    // A setTotal implies the index→line mapping may have changed (errors filter,
+    // clearing a search back to the full list, starting a fresh filtered view),
+    // so already-mounted rows would otherwise keep stale content — renderWindow()
+    // skips indices already in this.rows. Clear-and-remount to force a re-render
+    // with the new mapping (mirrors refresh()). updateCount() deliberately does
+    // NOT do this: streaming search only appends to filtered[], so display
+    // position k keeps its mapping and we must preserve scroll + mounted rows.
+    for (const [, el] of this.rows) el.remove();
+    this.rows.clear();
     this.renderWindow();
   }
 
