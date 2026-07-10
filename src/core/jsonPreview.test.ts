@@ -24,4 +24,15 @@ describe('previewTokens', () => {
     const toks = previewTokens('{"a":"say \\"hi\\""}');
     expect(toks.find((t) => t.cls === 'str')!.text).toBe('"say \\"hi\\""');
   });
+  it('handles string values ending in escaped backslash', () => {
+    const toks = previewTokens('{"path":"C:\\\\Users\\\\","ok":true}');
+    const by = (cls: string) => toks.filter((t) => t.cls === cls).map((t) => t.text);
+    expect(by('key')).toEqual(['"path"', '"ok"']);        // "ok" recognized as a key, not swallowed
+    expect(by('bool')).toEqual(['true']);
+  });
+  it('handles escaped backslash followed by escaped quote', () => {
+    // value is  \"  (backslash then quote), i.e. JSON  "\\\""
+    const toks = previewTokens('{"a":"x\\\\\\"y"}');
+    expect(toks.find((t) => t.cls === 'key')!.text).toBe('"a"');
+  });
 });
