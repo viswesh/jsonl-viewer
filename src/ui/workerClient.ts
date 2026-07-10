@@ -24,10 +24,13 @@ export class WorkerClient {
     switch (m.type) {
       case 'indexProgress': this.onIndexProgress?.(m.lines, m.bytes, m.totalBytes); break;
       case 'indexed': this.onIndexed?.(m.lineCount, m.fileSize); break;
-      case 'lines':
-        if (m.reqId === this.latestLinesReq) this.pendingLines.get(m.reqId)?.(m.previews);
+      case 'lines': {
+        const resolve = this.pendingLines.get(m.reqId);
         this.pendingLines.delete(m.reqId);
+        // stale request superseded by a newer one: settle with [] so callers never hang
+        resolve?.(m.reqId === this.latestLinesReq ? m.previews : []);
         break;
+      }
       case 'line': this.pendingLine.get(m.reqId)?.(m.text); this.pendingLine.delete(m.reqId); break;
       case 'searchHits':
         if (m.searchId === this.searchId) this.onSearchHits?.(m.searchId, m.hits, m.done, m.scanned, m.total);
