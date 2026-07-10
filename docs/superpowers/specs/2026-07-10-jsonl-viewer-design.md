@@ -79,9 +79,17 @@ Full-viewport drop zone. Headline: "Drop your .jsonl — it never leaves your br
   - **Transcript mode:** auto-enabled when shape detected. Chat bubbles per message, role labels (system/user/assistant/tool), markdown rendered, code blocks highlighted, long content collapsible. Tool calls and thinking blocks collapsed by default. Per-message token badges where data present. Message-type filter chips with live counts.
 - Divider draggable. Mobile: single column, tap line → detail slides over.
 
-### Visual identity
+### Visual identity — "Data is the interface"
 
-Dark-first, terminal-adjacent: dark default with light toggle, monospace data rendering, one sharp accent color. Screenshot-friendly for social sharing.
+Dark-first, futuristic minimalist. Explicitly avoids the black + acid-green AI-tool default.
+
+**Thesis:** chrome is nearly invisible; all color belongs to the data. Page loads monochrome graphite. Drop a file → the page blooms with the data's own colors (JSON syntax hues, role colors, match highlights). The product moment — your data appearing locally — is the visual moment, and tells the privacy story visually.
+
+- **Palette:** graphite scale — `#0E1014` background, `#1A1D23` surfaces, `#8B919C` muted text, `#E6E8EC` primary text. Single interactive accent: phosphor amber (`#F5A623` family) for controls/focus only — no blue or green anywhere in the chrome.4 restrained data-syntax hues reserved exclusively for JSON tokens and transcript roles.
+- **Type:** monospace as display face — headlines set large in mono, tight-tracked. One variable mono woff2 subset (~30KB, `font-display: swap`) for display + data; system sans for small UI labels only.
+- **Signature:** landing page — ghost JSONL lines drift slowly upward behind the drop zone, barely visible. `prefers-reduced-motion` → static.
+- **Instrument detail** (borrowed from runner-up direction): top-bar stats (line count, file size, error count) styled as precise instrument readouts.
+- Light theme toggle retained; light theme derives from the same token system.
 
 ## Transcript detection
 
