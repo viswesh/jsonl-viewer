@@ -43,6 +43,14 @@ export class VirtualList {
     this.renderWindow();
   }
 
+  // Update row count WITHOUT resetting scroll position — used mid-stream (e.g.
+  // incremental search hits) so the list doesn't snap back to top on each batch.
+  updateCount(n: number): void {
+    this.total = n;
+    this.spacer.style.height = `${n * this.opts.rowHeight}px`;
+    this.renderWindow();
+  }
+
   // Force a redraw of currently-mounted rows too (not just newly entering ones) —
   // callers use refresh() after async data (previews, bad-line flags) arrives for
   // rows that are already on screen, so render() must run again for them.

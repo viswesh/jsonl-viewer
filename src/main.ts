@@ -19,6 +19,7 @@ const state = {
   mode: 'json' as 'json' | 'transcript',
   transcriptAvailable: false,
   matchCount: null as number | null, searching: false,
+  searchId: 0,                           // current live search; stale hits are dropped
   previews: new Map<number, string>(),   // LRU-ish preview cache
 };
 
@@ -109,11 +110,13 @@ const topbarUpdate = createTopbar($('topbar'), {
   onSearch(q) {
     if (!state.client) return;
     if (!q.trim()) {
+      state.searchId = 0; // invalidate any in-flight search — drop its late hits
       state.filtered = null; state.matchCount = null; state.searching = false;
       list.setTotal(displayTotal()); updateTopbar(); return;
     }
     state.filtered = []; state.matchCount = 0; state.searching = true;
-    state.client.search(q);
+    state.searchId = state.client.search(q);
+    list.setTotal(0); // reset filtered view + scroll to top once, at search start
     updateTopbar();
   },
   onModeToggle() {
@@ -127,6 +130,7 @@ const topbarUpdate = createTopbar($('topbar'), {
   },
   onNewFile() { location.reload(); },
   onErrorsClick() {
+    state.searchId = 0; // invalidate any in-flight search so its hits don't corrupt this view
     state.filtered = [...state.badLines].sort((a, b) => a - b);
     state.matchCount = state.filtered.length; state.searching = false;
     list.setTotal(displayTotal()); updateTopbar();
@@ -139,6 +143,7 @@ function loadBlob(blob: Blob, name: string): void {
   state.filename = name;
   state.previews.clear(); state.badLines.clear();
   state.filtered = null; state.selected = null; state.matchCount = null;
+  state.searchId = 0; // fresh client restarts its id counter — invalidate old id
 
   client.onIndexed = (lineCount, fileSize) => {
     state.lineCount = lineCount; state.fileSize = fileSize;
@@ -150,13 +155,13 @@ function loadBlob(blob: Blob, name: string): void {
     if (lineCount > 0) select(0);
   };
   client.onBadLines = (indices) => { for (const i of indices) state.badLines.add(i); updateTopbar(); list.refresh(); };
-  client.onSearchHits = (_id, hits, done, scanned, total) => {
-    state.filtered!.push(...hits);
-    state.matchCount = state.filtered!.length;
+  client.onSearchHits = (id, hits, done, _scanned, _total) => {
+    if (id !== state.searchId || !state.filtered) return; // stale or superseded — drop
+    state.filtered.push(...hits);
+    state.matchCount = state.filtered.length;
     state.searching = !done;
-    list.setTotal(displayTotal());
+    list.updateCount(displayTotal()); // no scroll reset mid-stream
     updateTopbar();
-    void scanned; void total; // progress display: optional polish
   };
   client.onFatal = (message) => {
     alert(message); // v1: simple; replaced by inline error panel in styling task
