@@ -23,13 +23,14 @@ export function createRouter(post: (m: FromWorker) => void) {
           post({ type: 'indexed', lineCount: r.lineCount, fileSize: r.fileSize });
           break;
         }
-        case 'getLines': {
+        case 'getLinesByIndices': {
           if (!blob || !offsets) return;
           const previews: string[] = [];
-          for (let i = msg.from; i <= msg.to && i < offsets.length; i++) {
+          for (const i of msg.indices) {
+            if (i < 0 || i >= offsets.length) continue;
             previews.push(await readLine(blob, offsets, i, PREVIEW_BYTES));
           }
-          post({ type: 'lines', reqId: msg.reqId, from: msg.from, previews });
+          post({ type: 'linesByIndices', reqId: msg.reqId, indices: msg.indices, previews });
           break;
         }
         case 'getLine': {

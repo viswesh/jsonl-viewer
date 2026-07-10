@@ -12,7 +12,7 @@ export class WorkerClient {
   private searchId = 0;
   private pendingLines = new Map<number, (previews: string[]) => void>();
   private pendingLine = new Map<number, (text: string) => void>();
-  private latestLinesReq = 0; // stale getLines results are dropped
+  private latestLinesReq = 0; // stale getLinesByIndices results are dropped
 
   constructor() {
     this.worker = new Worker(new URL('../worker/worker.ts', import.meta.url), { type: 'module' });
@@ -24,7 +24,7 @@ export class WorkerClient {
     switch (m.type) {
       case 'indexProgress': this.onIndexProgress?.(m.lines, m.bytes, m.totalBytes); break;
       case 'indexed': this.onIndexed?.(m.lineCount, m.fileSize); break;
-      case 'lines': {
+      case 'linesByIndices': {
         const resolve = this.pendingLines.get(m.reqId);
         this.pendingLines.delete(m.reqId);
         // stale request superseded by a newer one: settle with [] so callers never hang
@@ -44,10 +44,10 @@ export class WorkerClient {
 
   load(blob: Blob): void { this.send({ type: 'load', blob }); }
 
-  getLines(from: number, to: number): Promise<string[]> {
+  getLinesByIndices(indices: number[]): Promise<string[]> {
     const reqId = ++this.reqId;
     this.latestLinesReq = reqId; // supersedes any in-flight preview request
-    return new Promise((res) => { this.pendingLines.set(reqId, res); this.send({ type: 'getLines', from, to, reqId }); });
+    return new Promise((res) => { this.pendingLines.set(reqId, res); this.send({ type: 'getLinesByIndices', indices, reqId }); });
   }
 
   getLine(index: number): Promise<string> {
@@ -62,4 +62,6 @@ export class WorkerClient {
   }
 
   validate(): void { this.send({ type: 'validate' }); }
+
+  terminate(): void { this.worker.terminate(); }
 }

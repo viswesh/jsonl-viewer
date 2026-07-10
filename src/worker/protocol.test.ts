@@ -12,14 +12,25 @@ describe('worker router', () => {
     await load(router, '{"a":1}\n{"b":"' + 'x'.repeat(1000) + '"}\n');
     expect(posted.find((m) => m.type === 'indexed')).toMatchObject({ lineCount: 2 });
 
-    await router({ type: 'getLines', from: 0, to: 1, reqId: 1 });
-    const lines = posted.find((m) => m.type === 'lines') as Extract<FromWorker, {type:'lines'}>;
+    await router({ type: 'getLinesByIndices', indices: [0, 1], reqId: 1 });
+    const lines = posted.find((m) => m.type === 'linesByIndices') as Extract<FromWorker, {type:'linesByIndices'}>;
     expect(lines.previews[0]).toBe('{"a":1}');
     expect(lines.previews[1]!.length).toBeLessThan(1000); // truncated preview
 
     await router({ type: 'getLine', index: 1, reqId: 2 });
     const full = posted.find((m) => m.type === 'line') as Extract<FromWorker, {type:'line'}>;
     expect(full.text.length).toBeGreaterThan(1000);
+  });
+
+  it('getLinesByIndices fetches exactly the requested (possibly sparse) indices, not a contiguous span', async () => {
+    const posted: FromWorker[] = [];
+    const router = createRouter((m) => posted.push(m));
+    await load(router, '{"n":0}\n{"n":1}\n{"n":2}\n');
+    await router({ type: 'getLinesByIndices', indices: [0, 2], reqId: 9 });
+    const lines = posted.find((m) => m.type === 'linesByIndices') as Extract<FromWorker, {type:'linesByIndices'}>;
+    // exactly 2 previews returned (not 3) — line 1 was never touched
+    expect(lines.previews).toEqual(['{"n":0}', '{"n":2}']);
+    expect(lines.indices).toEqual([0, 2]);
   });
 
   it('searches with abort of superseded scan', async () => {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 
 // --- helpers -----------------------------------------------------------
 
@@ -57,6 +58,30 @@ test('xss content does not execute', async ({ page }) => {
   if (await modeBtn.isVisible()) await modeBtn.click();
   await page.waitForTimeout(500);
   expect(await page.evaluate(() => (window as any).__pwned)).toBeUndefined();
+});
+
+// Regression lock: a fenced code block is markdown-parsed (marked escapes the
+// block's contents into text), sanitized (DOMPurify), then syntax-highlighted
+// in-place by speed-highlight — a separate code path from a bare inline tag.
+// This locks in that the injection inside the fence never becomes a live
+// element with a firing onerror handler.
+test('xss inside a markdown code fence does not execute after syntax highlighting', async ({ page }) => {
+  const fixture = readFileSync('tests/fixtures/xss.jsonl', 'utf8');
+  await page.goto('/');
+  await pasteText(page, fixture);
+  await expect(page.locator('#viewer')).toBeVisible();
+
+  // The fenced-code-block line is the last row in the fixture.
+  await page.locator('.row').last().click();
+  const modeBtn = page.locator('#tb-mode');
+  if (await modeBtn.isVisible()) await modeBtn.click();
+
+  // Let the async speed-highlight import + highlightElement pass run.
+  await page.waitForTimeout(500);
+
+  expect(await page.evaluate(() => (window as any).__pwned)).toBeUndefined();
+  const html = await page.locator('#detail-pane').innerHTML();
+  expect(html).not.toContain('onerror=');
 });
 
 // --- regressions deferred from Task 10 / Task 11 -------------------------
