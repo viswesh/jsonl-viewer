@@ -30,4 +30,23 @@ describe('renderJsonTree', () => {
     details.dispatchEvent(new Event('toggle'));
     expect(details.querySelectorAll('.tok-num').length).toBe(100);
   });
+
+  it('collapses a large top-level array (root wrapped, lazy)', () => {
+    const el = document.createElement('div');
+    renderJsonTree(Array.from({ length: 200 }, (_, i) => i), el);
+    const details = el.querySelector('details.json-node') as HTMLDetailsElement;
+    expect(details).toBeTruthy();
+    expect(details.open).toBe(false);
+    expect(details.querySelectorAll('.tok-num').length).toBe(0); // not built until expand
+    details.open = true;
+    details.dispatchEvent(new Event('toggle'));
+    expect(el.querySelectorAll('.tok-num').length).toBe(200);
+  });
+
+  it('small top-level object stays flattened (no root wrapper)', () => {
+    const el = document.createElement('div');
+    renderJsonTree({ a: 1, b: 2 }, el);
+    // two top-level entries rendered directly, not under a single root details
+    expect(el.querySelectorAll('.tok-key').length).toBe(2);
+  });
 });
