@@ -2,6 +2,7 @@ export interface TopbarState {
   filename: string; lineCount: number; fileSize: number;
   badCount: number; matchCount: number | null; searching: boolean;
   mode: 'json' | 'transcript'; transcriptAvailable: boolean;
+  errorsActive: boolean;
 }
 export interface TopbarHandlers {
   onSearch: (q: string) => void; onModeToggle: () => void;
@@ -43,7 +44,8 @@ export function createTopbar(el: HTMLElement, h: TopbarHandlers) {
     $('tb-size').textContent = fmtSize(s.fileSize);
     const err = $('tb-errors');
     err.hidden = s.badCount === 0;
-    err.textContent = `${s.badCount} bad`;
+    err.textContent = s.errorsActive ? 'back to full list' : `${s.badCount} bad`;
+    err.classList.toggle('active', s.errorsActive);
     const matches = $('tb-matches');
     matches.hidden = s.matchCount === null;
     matches.textContent = s.searching ? `${s.matchCount} matches…` : `${s.matchCount} matches`;

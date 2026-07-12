@@ -22,6 +22,7 @@ const state = {
   matchCount: null as number | null, searching: false,
   searchId: 0,                           // current live search; stale hits are dropped
   previews: new Map<number, string>(),   // LRU-ish preview cache
+  errorsActive: false,                   // true when the current filter came from the errors button
 };
 
 const listPane = $('list-pane');
@@ -122,11 +123,13 @@ const updateTopbar = () => topbarUpdate({
   filename: state.filename, lineCount: state.lineCount, fileSize: state.fileSize,
   badCount: state.badLines.size, matchCount: state.matchCount, searching: state.searching,
   mode: state.mode, transcriptAvailable: state.transcriptAvailable,
+  errorsActive: state.errorsActive,
 } satisfies TopbarState);
 
 const topbarUpdate = createTopbar($('topbar'), {
   onSearch(q) {
     if (!state.client) return;
+    state.errorsActive = false; // search always takes over from an errors-filtered view
     if (!q.trim()) {
       state.searchId = 0; // invalidate any in-flight search — drop its late hits
       state.filtered = null; state.matchCount = null; state.searching = false;
@@ -151,11 +154,21 @@ const topbarUpdate = createTopbar($('topbar'), {
   },
   onNewFile() { location.reload(); },
   onErrorsClick() {
+    if (state.errorsActive) {
+      // toggle off — restore the full list
+      state.errorsActive = false;
+      state.searchId = 0; state.filtered = null; state.matchCount = null; state.searching = false;
+      list.setTotal(displayTotal()); updateTopbar();
+      resetSelectionForFilterChange();
+      return;
+    }
+    state.errorsActive = true;
     state.searchId = 0; // invalidate any in-flight search so its hits don't corrupt this view
     state.filtered = [...state.badLines].sort((a, b) => a - b);
     state.matchCount = state.filtered.length; state.searching = false;
     list.setTotal(displayTotal()); updateTopbar();
     resetSelectionForFilterChange();
+    ($('tb-search') as HTMLInputElement).value = ''; // clear stale query text — errors view isn't search-driven
   },
 });
 
@@ -167,6 +180,7 @@ function loadBlob(blob: Blob, name: string): void {
   state.previews.clear(); state.badLines.clear();
   state.filtered = null; state.selected = null; state.matchCount = null;
   state.searchId = 0; // fresh client restarts its id counter — invalidate old id
+  state.errorsActive = false;
 
   client.onIndexed = (lineCount, fileSize) => {
     state.lineCount = lineCount; state.fileSize = fileSize;
