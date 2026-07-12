@@ -154,6 +154,7 @@ const topbarUpdate = createTopbar($('topbar'), {
   },
   onNewFile() { location.reload(); },
   onErrorsClick() {
+    if (state.badLines.size === state.lineCount) return; // every line is bad — filter would be a no-op
     if (state.errorsActive) {
       // toggle off — restore the full list
       state.errorsActive = false;

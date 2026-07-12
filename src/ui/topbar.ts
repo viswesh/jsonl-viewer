@@ -42,10 +42,13 @@ export function createTopbar(el: HTMLElement, h: TopbarHandlers) {
     $('tb-file').textContent = s.filename;
     $('tb-lines').textContent = `${s.lineCount.toLocaleString()} lines`;
     $('tb-size').textContent = fmtSize(s.fileSize);
-    const err = $('tb-errors');
+    const err = $('tb-errors') as HTMLButtonElement;
     err.hidden = s.badCount === 0;
-    err.textContent = s.errorsActive ? 'back to full list' : `${s.badCount} bad`;
-    err.classList.toggle('active', s.errorsActive);
+    // every line is bad — filtering to "errors only" would show the exact same list, a no-op toggle
+    const filterIsNoOp = s.badCount > 0 && s.badCount === s.lineCount;
+    err.disabled = filterIsNoOp;
+    err.textContent = filterIsNoOp ? `${s.badCount} bad` : s.errorsActive ? 'back to full list' : `${s.badCount} bad`;
+    err.classList.toggle('active', s.errorsActive && !filterIsNoOp);
     const matches = $('tb-matches');
     matches.hidden = s.matchCount === null;
     matches.textContent = s.searching ? `${s.matchCount} matches…` : `${s.matchCount} matches`;

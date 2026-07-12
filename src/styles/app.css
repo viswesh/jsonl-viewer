@@ -31,6 +31,8 @@ button:hover { border-color: var(--accent); }
 .readout { color: var(--muted); font-size: 12px; letter-spacing: 0.02em; white-space: nowrap; }
 .readout.danger { color: var(--danger); border-color: var(--danger); background: none; }
 .readout.danger.active { color: var(--bg); background: var(--danger); }
+.readout.danger:disabled { cursor: default; opacity: 0.7; }
+.readout.danger:disabled:hover { border-color: var(--danger); }
 #tb-search { flex: 1; min-width: 120px; background: var(--bg); color: var(--text); border: 1px solid var(--surface-2); border-radius: 4px; padding: 5px 10px; font: inherit; }
 #tb-search:focus { border-color: var(--accent); outline: none; }
 
