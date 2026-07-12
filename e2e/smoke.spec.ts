@@ -196,3 +196,18 @@ test('scroll position survives streaming search batches (best-effort)', async ({
     expect(scrollTop).toBeGreaterThanOrEqual(0);
   }
 });
+
+test('errors button disables instead of fake-toggling when every line is bad', async ({ page }) => {
+  await page.goto('/');
+  await pasteText(page, 'role: "user"'); // single line, not valid JSON — the only line is the bad line
+  await expect(page.locator('#viewer')).toBeVisible();
+
+  const errBtn = page.locator('#tb-errors');
+  await expect(errBtn).toHaveText('1 bad');
+  await expect(errBtn).toBeDisabled();
+
+  // a disabled button fires no click handler — confirm the label never flips to the toggle state
+  await errBtn.click({ force: true }).catch(() => {});
+  await expect(errBtn).toHaveText('1 bad');
+  await expect(page.locator('.row')).toHaveCount(1);
+});
