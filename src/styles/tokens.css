@@ -1,0 +1,34 @@
+:root {
+  --bg: #0e1014;
+  --surface: #1a1d23;
+  --surface-2: #232730;
+  --muted: #8b919c;
+  --text: #e6e8ec;
+  --accent: #f5a623;
+  --accent-dim: #f5a62333;
+  /* data syntax hues — reserved for data only */
+  --syn-key: #d8b4fe;
+  --syn-str: #fca5a5;
+  --syn-num: #fcd34d;
+  --syn-bool: #f0abfc;
+  --role-user: var(--text);
+  --role-assistant: #f5a623;
+  --role-system: var(--muted);
+  --role-tool: #d8b4fe;
+  --danger: #f87171;
+  --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --sans: system-ui, sans-serif;
+  --row-h: 28px;
+}
+[data-theme="light"] {
+  --bg: #f7f7f5; --surface: #ffffff; --surface-2: #eeeeec;
+  --muted: #6b7280; --text: #16181d; --accent: #c77d00; --accent-dim: #c77d0022;
+  /* dark-mode data hues are pastels tuned for a near-black bg — override for AA contrast on white */
+  --syn-key: #7c3aed;
+  --syn-str: #b91c1c;
+  --syn-num: #b45309;
+  --syn-bool: #a21caf;
+  --role-assistant: #c77d00;
+  --role-tool: #7c3aed;
+  --danger: #dc2626;
+}
